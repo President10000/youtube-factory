@@ -1,0 +1,59 @@
+name: Two-Channel Video Generator
+on:
+  schedule:
+    - cron: '30 23 * * *'
+  workflow_dispatch:
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      matrix:
+        channel: [mindset, wealth] 
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: Setup FFmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+        with:
+          architecture: 'x64'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          npm install
+          npx playwright install chromium --with-deps
+
+      - name: Start 9Router
+        run: |
+          npm install -g 9router
+          9router start &
+          sleep 5 
+          9router add-key --provider gemini --key ${{ secrets.GEMINI_API_KEY }} --tier 1
+          9router add-key --provider openrouter --key ${{ secrets.OPENROUTER_API_KEY }} --tier 2
+
+      - name: Generate Script & Render
+        env:
+          OPENAI_API_BASE: "http://localhost:20128/v1"
+          OPENAI_API_KEY: "dummy-key-for-9router" 
+        run: |
+          python agenttube.py --channel ${{ matrix.channel }}
+
+      - name: Upload Video
+        env:
+          YOUTUBE_COOKIE: ${{ secrets[format('COOKIE_{0}', runner.matrix.channel)] }}
+        run: |
+          node autosocial_upload.js --channel ${{ matrix.channel }}
