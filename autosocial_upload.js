@@ -109,7 +109,13 @@ const { chromium } = require("playwright");
 
   console.log(`Successfully authenticated into YouTube Studio for ${channel}.`);
 
-  // ADDED: Press Escape to close any "Welcome" or "Update" popups blocking the screen
+  console.log("Waiting for Studio dashboard to fully load...");
+  // Force the script to wait until the Create button actually exists on the page
+  await page.waitForSelector("#create-icon", {
+    state: "attached",
+    timeout: 60000,
+  });
+
   console.log("Clearing potential popups...");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(1000);
@@ -117,8 +123,15 @@ const { chromium } = require("playwright");
   await page.waitForTimeout(1000);
 
   console.log(`Uploading ${videoFile}...`);
-  // ADDED: { force: true } tells Playwright to click the button even if it thinks an overlay is in the way
-  await page.locator("#create-icon").click({ force: true });
+  // Use a more resilient locator and force the click
+  const createBtn = page
+    .locator("#create-icon, ytcp-button#create-icon")
+    .first();
+  await createBtn.click({ force: true });
+
+  // Brief pause to allow the dropdown menu to visually animate open
+  await page.waitForTimeout(2000);
+
   await page
     .locator('tp-yt-paper-item:has-text("Upload videos")')
     .click({ force: true });
