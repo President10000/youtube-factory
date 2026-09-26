@@ -1,8 +1,8 @@
-name: Two-Channel Video Generator
-
+name: 3-Day Long Video Generator
 on:
   schedule:
-    - cron: "30 23 * * *"
+    # Runs at 19:00 UTC every 3rd day
+    - cron: "0 19 */3 * * *"
   workflow_dispatch:
 
 jobs:
@@ -16,35 +16,21 @@ jobs:
             cookie_secret: COOKIE_MINDSET
           - channel: wealth
             cookie_secret: COOKIE_WEALTH
-
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Install System Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Install Project Dependencies
-        run: |
+      - run: |
           pip install -r requirements.txt
           npm install
           npx playwright install chromium --with-deps
           npm install -g 9router
-
-      - name: Generate Script & Render
-        env:
+      - env:
           OPENAI_API_BASE: "http://localhost:20128/v1"
           OPENAI_API_KEY: "dummy-key-for-9router"
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -54,10 +40,7 @@ jobs:
           sleep 5
           9router add-key --provider gemini --key "$GEMINI_API_KEY" --tier 1
           9router add-key --provider openrouter --key "$OPENROUTER_API_KEY" --tier 2
-          python agenttube.py --channel "${{ matrix.channel }}"
-
-      - name: Upload Video
-        env:
+          python agenttube.py --channel "${{ matrix.channel }}" --format long
+      - env:
           YOUTUBE_COOKIE: ${{ secrets[matrix.cookie_secret] }}
-        run: |
-          node autosocial_upload.js --channel "${{ matrix.channel }}"
+        run: node autosocial_upload.js --channel "${{ matrix.channel }}" --format long
