@@ -6,6 +6,7 @@ import google.generativeai as genai
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--channel", required=True)
+    parser.add_argument("--format", choices=["short", "long"], default="short")
     args = parser.parse_args()
     
     # Load the channel configuration
