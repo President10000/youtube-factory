@@ -109,9 +109,19 @@ const { chromium } = require("playwright");
 
   console.log(`Successfully authenticated into YouTube Studio for ${channel}.`);
 
+  // ADDED: Press Escape to close any "Welcome" or "Update" popups blocking the screen
+  console.log("Clearing potential popups...");
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(1000);
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(1000);
+
   console.log(`Uploading ${videoFile}...`);
-  await page.locator("#create-icon").click();
-  await page.locator('tp-yt-paper-item:has-text("Upload videos")').click();
+  // ADDED: { force: true } tells Playwright to click the button even if it thinks an overlay is in the way
+  await page.locator("#create-icon").click({ force: true });
+  await page
+    .locator('tp-yt-paper-item:has-text("Upload videos")')
+    .click({ force: true });
 
   await page.locator('input[type="file"]').setInputFiles(videoFile);
 
