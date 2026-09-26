@@ -17,7 +17,8 @@ def main():
     
     # Connect to Gemini API
     genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-    model = genai.GenerativeModel('gemini-pro')
+    
+    model = genai.GenerativeModel('gemini-1.5-flash')
     
     print("Writing script...")
     script = model.generate_content(config["system_prompt"])
