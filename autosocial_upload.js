@@ -62,14 +62,27 @@ const { chromium } = require("playwright");
     : metadata.description;
 
   const browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext();
 
-  // Inject sanitized cookies
-  await context.addCookies(cookies);
+  // ADDED: Realistic User-Agent to bypass Google Security
+  const context = await browser.newContext({
+    userAgent:
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  });
 
   const page = await context.newPage();
-  console.log("Accessing YouTube Studio...");
 
+  // ADDED: Warm-up sequence on the main YouTube page first
+  console.log("Warming up session on main YouTube page...");
+  await page.goto("https://www.youtube.com");
+
+  // Inject sanitized cookies while on the correct domain
+  await context.addCookies(cookies);
+
+  // Reload the page so YouTube reads the cookies and logs you in
+  await page.reload();
+  await page.waitForTimeout(3000);
+
+  console.log("Accessing YouTube Studio...");
   await page.goto("https://studio.youtube.com");
 
   // Wait 5 seconds to allow any automatic redirects or popups to settle
