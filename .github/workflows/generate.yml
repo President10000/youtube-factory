@@ -1,7 +1,7 @@
 name: Two-Channel Video Generator
 on:
   schedule:
-    - cron: '30 23 * * *'
+    - cron: "30 23 * * *"
   workflow_dispatch:
 
 jobs:
@@ -10,7 +10,7 @@ jobs:
     strategy:
       max-parallel: 1
       matrix:
-        channel: [mindset, wealth] 
+        channel: [mindset, wealth]
 
     steps:
       - name: Checkout Repository
@@ -19,17 +19,12 @@ jobs:
       - name: Setup Node.js 18
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: "18"
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
-          
-      - name: Setup FFmpeg
-        uses: FedericoCarboni/setup-ffmpeg@v3
-        with:
-          architecture: 'x64'
+          python-version: "3.11"
 
       - name: Install Dependencies
         run: |
@@ -48,7 +43,7 @@ jobs:
       - name: Generate Script & Render
         env:
           OPENAI_API_BASE: "http://localhost:20128/v1"
-          OPENAI_API_KEY: "dummy-key-for-9router" 
+          OPENAI_API_KEY: "dummy-key-for-9router"
         run: |
           python agenttube.py --channel ${{ matrix.channel }}
 
