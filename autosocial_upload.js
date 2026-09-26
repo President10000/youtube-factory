@@ -71,6 +71,29 @@ const { chromium } = require("playwright");
   console.log("Accessing YouTube Studio...");
 
   await page.goto("https://studio.youtube.com");
+
+  // Wait 5 seconds to allow any automatic redirects or popups to settle
+  await page.waitForTimeout(5000);
+
+  const currentUrl = page.url();
+  const pageTitle = await page.title();
+
+  console.log(`Current URL: ${currentUrl}`);
+  console.log(`Page Title: ${pageTitle}`);
+
+  if (
+    currentUrl.includes("accounts.google.com") ||
+    currentUrl.includes("signin")
+  ) {
+    console.error(
+      "CRITICAL ERROR: Google rejected your cookies and redirected to the login page.",
+    );
+    console.error(
+      "This usually means the cookies expired, or Google flagged the GitHub Actions server IP as suspicious. Check your Google account security alerts and export fresh cookies.",
+    );
+    process.exit(1);
+  }
+
   console.log(`Successfully authenticated into YouTube Studio for ${channel}.`);
 
   console.log(`Uploading ${videoFile}...`);
