@@ -63,7 +63,7 @@ const { chromium } = require("playwright");
 
   const browser = await chromium.launch({ headless: true });
 
-  // ADDED: Realistic User-Agent to bypass Google Security
+  // Realistic User-Agent to bypass Google Security
   const context = await browser.newContext({
     userAgent:
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -71,7 +71,6 @@ const { chromium } = require("playwright");
 
   const page = await context.newPage();
 
-  // ADDED: Warm-up sequence on the main YouTube page first
   console.log("Warming up session on main YouTube page...");
   await page.goto("https://www.youtube.com");
 
@@ -109,13 +108,23 @@ const { chromium } = require("playwright");
 
   console.log(`Successfully authenticated into YouTube Studio for ${channel}.`);
 
-  console.log("Waiting for Studio dashboard to fully load...");
-  // Force the script to wait until the Create button actually exists on the page
-  await page.waitForSelector("#create-icon", {
-    state: "attached",
-    timeout: 60000,
-  });
+  // 1. Handle "Welcome to YouTube Studio" popup for new channels
+  console.log("Checking for 'Welcome to YouTube Studio' popups...");
+  try {
+    const continueBtn = page
+      .locator(
+        'ytcp-button:has-text("CONTINUE"), ytcp-button:has-text("Continue")',
+      )
+      .first();
+    await continueBtn.waitFor({ state: "visible", timeout: 5000 });
+    console.log("Found Welcome popup. Clicking Continue...");
+    await continueBtn.click();
+    await page.waitForTimeout(2000);
+  } catch (e) {
+    console.log("No Welcome popup detected.");
+  }
 
+  // 2. Clear any other potential UI blockers
   console.log("Clearing potential popups...");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(1000);
@@ -123,19 +132,29 @@ const { chromium } = require("playwright");
   await page.waitForTimeout(1000);
 
   console.log(`Uploading ${videoFile}...`);
-  // Use a more resilient locator and force the click
+
+  // 3. Resilient clicker: Looks for the Create Button, Upload Icon, OR Empty Channel Upload Button
   const createBtn = page
-    .locator("#create-icon, ytcp-button#create-icon")
+    .locator("#create-icon, #upload-icon, #upload-button")
     .first();
+  await createBtn.waitFor({ state: "attached", timeout: 30000 });
   await createBtn.click({ force: true });
 
-  // Brief pause to allow the dropdown menu to visually animate open
   await page.waitForTimeout(2000);
 
-  await page
-    .locator('tp-yt-paper-item:has-text("Upload videos")')
-    .click({ force: true });
+  // 4. Only click the dropdown menu if it is required (some buttons skip straight to the modal)
+  try {
+    const uploadMenuItem = page.locator(
+      'tp-yt-paper-item:has-text("Upload videos")',
+    );
+    await uploadMenuItem.waitFor({ state: "visible", timeout: 5000 });
+    await uploadMenuItem.click({ force: true });
+  } catch (e) {
+    console.log("Dropdown menu not needed. Modal likely already open.");
+  }
 
+  console.log("Waiting for file input to appear...");
+  await page.waitForSelector('input[type="file"]', { timeout: 30000 });
   await page.locator('input[type="file"]').setInputFiles(videoFile);
 
   await page.waitForSelector("#title-textarea", { timeout: 60000 });
