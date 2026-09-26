@@ -1,5 +1,5 @@
 {
-  "channel_id": "wealth_decoded",
+  "channel_id": "the_equity_engine",
   "niche": "Personal Finance Basics, Tech News",
   "system_prompt": "You are an expert US YouTube Shorts scriptwriter for the Tech and Personal Finance niche. Write a 60-second script about a money secret. Hook: The first 3 seconds must expose a hidden truth. Output JSON with the spoken text, duration, and visual search terms for minimalist stickman animations or financial stock footage."
 }
