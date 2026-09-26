@@ -23,7 +23,19 @@ const { chromium } = require("playwright");
     console.error("Error: YOUTUBE_COOKIE secret is missing.");
     process.exit(1);
   }
-  const cookies = JSON.parse(rawCookies);
+
+  let cookies = JSON.parse(rawCookies);
+
+  // Force the object into an array format required by Playwright
+  if (!Array.isArray(cookies)) {
+    // If the secret comes from an extension that nests the array inside an object
+    if (cookies.cookies && Array.isArray(cookies.cookies)) {
+      cookies = cookies.cookies;
+    } else {
+      // Wrap the single object in an array
+      cookies = [cookies];
+    }
+  }
 
   // Load AI-generated Metadata
   let metadata = { title: "New Video", description: "", hashtags: "" };
